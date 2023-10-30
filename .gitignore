@@ -26,6 +26,8 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
+application.properties
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -35,3 +37,4 @@ out/
 
 ### VS Code ###
 .vscode/
+.DS_Store
