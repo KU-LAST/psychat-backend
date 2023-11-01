@@ -2,6 +2,7 @@ package psychat.backend.member.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import psychat.backend.global.exception.NotFoundException;
 import psychat.backend.member.domain.Member;
 import psychat.backend.member.dto.response.LoginResponse;
 import psychat.backend.member.repository.MemberRepository;
@@ -25,5 +26,10 @@ public class MemberService {
 
     private String getToken() {
         return UUID.randomUUID().toString();
+    }
+
+    public Member findByToken(String token) {
+        return memberRepository.findByToken(token)
+                .orElseThrow(() -> new NotFoundException("존재하지 않는 사용자입니다."));
     }
 }
