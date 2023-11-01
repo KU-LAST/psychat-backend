@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class NotFoundException extends RuntimeException {
+public class JsonConvertException extends RuntimeException {
 
     private final String message;
 }
