@@ -38,4 +38,8 @@ public class Session {
                 .member(member)
                 .build();
     }
+
+    public void updateEmotion(String emotion) {
+        this.emotion = emotion;
+    }
 }

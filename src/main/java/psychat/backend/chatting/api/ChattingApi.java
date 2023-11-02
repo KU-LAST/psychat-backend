@@ -3,7 +3,9 @@ package psychat.backend.chatting.api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import psychat.backend.chatting.dto.request.ChattingRequest;
+import psychat.backend.chatting.dto.request.EndRequest;
 import psychat.backend.chatting.dto.response.ChattingResponse;
+import psychat.backend.chatting.dto.response.EmotionResponse;
 import psychat.backend.chatting.dto.response.SessionResponse;
 import psychat.backend.chatting.service.ChattingService;
 import psychat.backend.chatting.service.EmotionService;
@@ -29,5 +31,10 @@ public class ChattingApi {
     @GetMapping("/fill-emotion")
     public void fill() {
         emotionService.fill();
+    }
+
+    @PostMapping("/end-chat")
+    public EmotionResponse end(@RequestParam String token, @RequestBody EndRequest request) {
+        return chattingService.end(token, request);
     }
 }
