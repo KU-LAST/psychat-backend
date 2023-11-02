@@ -4,37 +4,31 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamSource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileCopyUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import psychat.backend.chatting.domain.BotMessage;
-import psychat.backend.chatting.domain.Emotion;
-import psychat.backend.chatting.domain.UserMessage;
-import psychat.backend.chatting.repository.BotMessageRepository;
-import psychat.backend.chatting.repository.EmotionRepository;
-import psychat.backend.chatting.repository.SessionRepository;
 import psychat.backend.chatting.domain.Session;
+import psychat.backend.chatting.domain.UserMessage;
 import psychat.backend.chatting.dto.request.ChatbotRequest;
 import psychat.backend.chatting.dto.request.ChattingRequest;
+import psychat.backend.chatting.dto.request.EndRequest;
 import psychat.backend.chatting.dto.response.ChatbotResponse;
 import psychat.backend.chatting.dto.response.ChattingResponse;
+import psychat.backend.chatting.dto.response.EmotionResponse;
 import psychat.backend.chatting.dto.response.SessionResponse;
+import psychat.backend.chatting.repository.BotMessageRepository;
+import psychat.backend.chatting.repository.SessionRepository;
 import psychat.backend.chatting.repository.UserMessageRepository;
 import psychat.backend.global.exception.JsonConvertException;
 import psychat.backend.global.exception.NotFoundException;
 import psychat.backend.member.domain.Member;
 import psychat.backend.member.service.MemberService;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 @Service
 @RequiredArgsConstructor
@@ -52,15 +46,21 @@ public class ChattingService {
     private final UserMessageRepository userMessageRepository;
     private final BotMessageRepository botMessageRepository;
 
+    private Map<Long, Map<Integer, Integer>> sessionIndexMap = new HashMap<>();
+
     public SessionResponse start(String token) {
         Member findMember = memberService.findByToken(token);
 
         Session session = Session.init(findMember);
         Session savedSession = sessionRepository.save(session);
 
+        Map<Integer, Integer> emotionAndFrequency = new HashMap<>();
+        sessionIndexMap.put(savedSession.getId(), emotionAndFrequency);
+
         return SessionResponse.of(savedSession.getId());
     }
 
+    @Transactional
     public ChattingResponse chat(String token, ChattingRequest request) {
         Session findSession = findBySessionId(request.getSessionId());
         ChatbotResponse chatbotResponse = send(request);
@@ -73,7 +73,44 @@ public class ChattingService {
         userMessageRepository.save(userMessage);
         botMessageRepository.save(botMessage);
 
+        Map<Integer, Integer> emotionAndFrequency = sessionIndexMap.get(findSession.getId());
+        int key = chatbotResponse.getEmotion();
+        emotionAndFrequency.computeIfPresent(key, (k, v) -> v + 1);
+        emotionAndFrequency.putIfAbsent(key, 1);
+
         return ChattingResponse.of(chatbotResponse);
+    }
+
+    @Transactional
+    public EmotionResponse end(String token, EndRequest request) {
+        Session findSession = findBySessionId(request.getSessionId());
+
+        int emotionResultIndex = getEmotionResult(findSession.getId());
+        String emotion = emotionService.convert((long) emotionResultIndex);
+
+        findSession.updateEmotion(emotion);
+        sessionIndexMap.remove(findSession.getId());
+
+        return EmotionResponse.of(emotion);
+    }
+
+    private int getEmotionResult(Long sessionId) {
+        Map<Integer, Integer> emotionAndFrequency = sessionIndexMap.get(sessionId);
+
+        Integer maxValue = -1;
+        Integer maxKey = -1;
+
+        for (Entry<Integer, Integer> entry : emotionAndFrequency.entrySet()) {
+            int key = entry.getKey();
+            int value = entry.getValue();
+
+            if(value > maxValue) {
+                maxValue = value;
+                maxKey = key;
+            }
+        }
+
+        return maxKey;
     }
 
     private Session findBySessionId(Long sessionId) {
