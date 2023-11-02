@@ -1,4 +1,4 @@
-package psychat.backend.chatting;
+package psychat.backend.chatting.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import psychat.backend.chatting.domain.Session;
