@@ -6,6 +6,7 @@ import psychat.backend.chatting.dto.request.ChattingRequest;
 import psychat.backend.chatting.dto.response.ChattingResponse;
 import psychat.backend.chatting.dto.response.SessionResponse;
 import psychat.backend.chatting.service.ChattingService;
+import psychat.backend.chatting.service.EmotionService;
 
 @RestController
 @RequiredArgsConstructor
@@ -13,6 +14,7 @@ import psychat.backend.chatting.service.ChattingService;
 public class ChattingApi {
 
     private final ChattingService chattingService;
+    private final EmotionService emotionService;
 
     @GetMapping("/start-chat")
     public SessionResponse start(@RequestParam String token) {
@@ -24,4 +26,8 @@ public class ChattingApi {
         return chattingService.chat(token, request);
     }
 
+    @GetMapping("/fill-emotion")
+    public void fill() {
+        emotionService.fill();
+    }
 }
