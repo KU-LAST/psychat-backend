@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import psychat.backend.chatting.dto.request.ChattingRequest;
 import psychat.backend.chatting.dto.request.EndRequest;
-import psychat.backend.chatting.dto.response.ChattingListResponse;
-import psychat.backend.chatting.dto.response.ChattingResponse;
-import psychat.backend.chatting.dto.response.EmotionResponse;
-import psychat.backend.chatting.dto.response.SessionResponse;
+import psychat.backend.chatting.dto.response.*;
 import psychat.backend.chatting.service.ChattingService;
 import psychat.backend.chatting.service.EmotionService;
 
@@ -42,5 +39,10 @@ public class ChattingApi {
     @GetMapping("/chat/{session-id}")
     public ChattingListResponse chattingListBySessionId(@PathVariable("session-id") Long sessionId) {
         return chattingService.chattingListBySessionId(sessionId);
+    }
+
+    @GetMapping("/previous-chats")
+    public PreviousChatListResponse previousChats(@RequestParam String token) {
+        return chattingService.previousChats(token);
     }
 }
