@@ -3,8 +3,10 @@ package psychat.backend.chatting.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -14,10 +16,7 @@ import psychat.backend.chatting.domain.UserMessage;
 import psychat.backend.chatting.dto.request.ChatbotRequest;
 import psychat.backend.chatting.dto.request.ChattingRequest;
 import psychat.backend.chatting.dto.request.EndRequest;
-import psychat.backend.chatting.dto.response.ChatbotResponse;
-import psychat.backend.chatting.dto.response.ChattingResponse;
-import psychat.backend.chatting.dto.response.EmotionResponse;
-import psychat.backend.chatting.dto.response.SessionResponse;
+import psychat.backend.chatting.dto.response.*;
 import psychat.backend.chatting.repository.BotMessageRepository;
 import psychat.backend.chatting.repository.SessionRepository;
 import psychat.backend.chatting.repository.UserMessageRepository;
@@ -30,12 +29,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChattingService {
 
     @Value("${CHATBOT_SERVER_URL}")
     private String chatBotUrl;
+
+    //Utils
+    private final ObjectMapper objectMapper;
+
 
     //Service
     private final MemberService memberService;
@@ -46,7 +50,11 @@ public class ChattingService {
     private final UserMessageRepository userMessageRepository;
     private final BotMessageRepository botMessageRepository;
 
-    private Map<Long, Map<Integer, Integer>> sessionIndexMap = new HashMap<>();
+    private static Map<Long, Map<Integer, Integer>> sessionIndexMap = new HashMap<>();
+
+    public static Map<Long, Map<Integer, Integer>> getIndexMap() {
+        return sessionIndexMap;
+    }
 
     public SessionResponse start(String token) {
         Member findMember = memberService.findByToken(token);
@@ -65,18 +73,13 @@ public class ChattingService {
         Session findSession = findBySessionId(request.getSessionId());
         ChatbotResponse chatbotResponse = send(request);
 
-        String emotionResult = emotionService.convert((long) chatbotResponse.getEmotion());
-
-        UserMessage userMessage = UserMessage.of(findSession, request.getMessageContent(), emotionResult);
+        UserMessage userMessage = UserMessage.of(findSession, request.getMessageContent());
         BotMessage botMessage = BotMessage.of(findSession, chatbotResponse.getResponseContent());
 
-        userMessageRepository.save(userMessage);
+        UserMessage savedUM = userMessageRepository.save(userMessage);
         botMessageRepository.save(botMessage);
 
-        Map<Integer, Integer> emotionAndFrequency = sessionIndexMap.get(findSession.getId());
-        int key = chatbotResponse.getEmotion();
-        emotionAndFrequency.computeIfPresent(key, (k, v) -> v + 1);
-        emotionAndFrequency.putIfAbsent(key, 1);
+        emotionService.processEmotion(request, savedUM.getId());
 
         return ChattingResponse.of(chatbotResponse);
     }
@@ -121,9 +124,8 @@ public class ChattingService {
     private ChatbotResponse send(ChattingRequest request) {
         ChatbotRequest chatbotRequest = ChatbotRequest.of(request.getMessageContent());
 
-        ObjectMapper mapper = new ObjectMapper();
         try {
-            String jsonString = mapper.writeValueAsString(chatbotRequest);
+            String jsonString = objectMapper.writeValueAsString(chatbotRequest);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -133,7 +135,7 @@ public class ChattingService {
             ResponseEntity<String> responseEntity =
                     restTemplate.exchange(chatBotUrl, HttpMethod.POST, requestEntity, String.class);
 
-            return mapper.readValue(responseEntity.getBody(), ChatbotResponse.class);
+            return objectMapper.readValue(responseEntity.getBody(), ChatbotResponse.class);
         } catch (JsonProcessingException e) {
             throw new JsonConvertException("JSON이 올바르지 않습니다.");
         }
