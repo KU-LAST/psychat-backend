@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import psychat.backend.chatting.dto.request.ChattingRequest;
 import psychat.backend.chatting.dto.request.EndRequest;
+import psychat.backend.chatting.dto.response.ChattingListResponse;
 import psychat.backend.chatting.dto.response.ChattingResponse;
 import psychat.backend.chatting.dto.response.EmotionResponse;
 import psychat.backend.chatting.dto.response.SessionResponse;
@@ -36,5 +37,10 @@ public class ChattingApi {
     @PostMapping("/end-chat")
     public EmotionResponse end(@RequestParam String token, @RequestBody EndRequest request) {
         return chattingService.end(token, request);
+    }
+
+    @GetMapping("/chat/{session-id}")
+    public ChattingListResponse chattingListBySessionId(@PathVariable("session-id") Long sessionId) {
+        return chattingService.chattingListBySessionId(sessionId);
     }
 }
