@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -14,10 +15,7 @@ import psychat.backend.chatting.domain.UserMessage;
 import psychat.backend.chatting.dto.request.ChatbotRequest;
 import psychat.backend.chatting.dto.request.ChattingRequest;
 import psychat.backend.chatting.dto.request.EndRequest;
-import psychat.backend.chatting.dto.response.ChatbotResponse;
-import psychat.backend.chatting.dto.response.ChattingResponse;
-import psychat.backend.chatting.dto.response.EmotionResponse;
-import psychat.backend.chatting.dto.response.SessionResponse;
+import psychat.backend.chatting.dto.response.*;
 import psychat.backend.chatting.repository.BotMessageRepository;
 import psychat.backend.chatting.repository.SessionRepository;
 import psychat.backend.chatting.repository.UserMessageRepository;
@@ -36,6 +34,13 @@ public class ChattingService {
 
     @Value("${CHATBOT_SERVER_URL}")
     private String chatBotUrl;
+
+    @Value("${EMOTION_JUDGE_URL}")
+    private String emotionUrl;
+
+    //Utils
+    private final ObjectMapper objectMapper;
+
 
     //Service
     private final MemberService memberService;
@@ -65,20 +70,48 @@ public class ChattingService {
         Session findSession = findBySessionId(request.getSessionId());
         ChatbotResponse chatbotResponse = send(request);
 
-        String emotionResult = emotionService.convert((long) chatbotResponse.getEmotion());
-
-        UserMessage userMessage = UserMessage.of(findSession, request.getMessageContent(), emotionResult);
+        UserMessage userMessage = UserMessage.of(findSession, request.getMessageContent());
         BotMessage botMessage = BotMessage.of(findSession, chatbotResponse.getResponseContent());
 
-        userMessageRepository.save(userMessage);
-        botMessageRepository.save(botMessage);
+        UserMessage savedUM = userMessageRepository.save(userMessage);
 
-        Map<Integer, Integer> emotionAndFrequency = sessionIndexMap.get(findSession.getId());
-        int key = chatbotResponse.getEmotion();
-        emotionAndFrequency.computeIfPresent(key, (k, v) -> v + 1);
-        emotionAndFrequency.putIfAbsent(key, 1);
+        processEmotion(request, savedUM.getId());
 
         return ChattingResponse.of(chatbotResponse);
+    }
+
+    @Async
+    public void processEmotion(ChattingRequest request, Long userMessageId) {
+        ChatbotRequest emotionRequest = ChatbotRequest.of(request.getMessageContent());
+
+        try {
+            String jsonString = objectMapper.writeValueAsString(emotionRequest);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> requestEntity = new HttpEntity<>(jsonString, headers);
+
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> responseEntity =
+                    restTemplate.exchange(emotionUrl, HttpMethod.POST, requestEntity, String.class);
+
+            EmotionJudgeResponse response = objectMapper.readValue(responseEntity.getBody(), EmotionJudgeResponse.class);
+
+            String emotionResult = emotionService.convert((long) response.getEmotion());
+
+            Map<Integer, Integer> emotionAndFrequency = sessionIndexMap.get(request.getSessionId());
+            int key = response.getEmotion();
+            emotionAndFrequency.computeIfPresent(key, (k, v) -> v + 1);
+            emotionAndFrequency.putIfAbsent(key, 1);
+
+            UserMessage findUserMessage = userMessageRepository.findById(userMessageId)
+                    .orElseThrow(() -> new NotFoundException("유저 메시지가 존재하지 않습니다."));
+
+            findUserMessage.update(emotionResult);
+
+        } catch (JsonProcessingException e) {
+            throw new JsonConvertException("JSON이 올바르지 않습니다.");
+        }
     }
 
     @Transactional
@@ -121,9 +154,8 @@ public class ChattingService {
     private ChatbotResponse send(ChattingRequest request) {
         ChatbotRequest chatbotRequest = ChatbotRequest.of(request.getMessageContent());
 
-        ObjectMapper mapper = new ObjectMapper();
         try {
-            String jsonString = mapper.writeValueAsString(chatbotRequest);
+            String jsonString = objectMapper.writeValueAsString(chatbotRequest);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -133,7 +165,7 @@ public class ChattingService {
             ResponseEntity<String> responseEntity =
                     restTemplate.exchange(chatBotUrl, HttpMethod.POST, requestEntity, String.class);
 
-            return mapper.readValue(responseEntity.getBody(), ChatbotResponse.class);
+            return objectMapper.readValue(responseEntity.getBody(), ChatbotResponse.class);
         } catch (JsonProcessingException e) {
             throw new JsonConvertException("JSON이 올바르지 않습니다.");
         }

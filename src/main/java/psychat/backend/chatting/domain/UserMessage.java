@@ -34,11 +34,14 @@ public class UserMessage {
     @Column(updatable = false)
     private LocalDateTime startTime;
 
-    public static UserMessage of(Session session, String messageContent, String emotion) {
+    public static UserMessage of(Session session, String messageContent) {
         return UserMessage.builder()
                 .session(session)
                 .messageContent(messageContent)
-                .emotion(emotion)
                 .build();
+    }
+
+    public void update(String emotion) {
+        this.emotion = emotion;
     }
 }
