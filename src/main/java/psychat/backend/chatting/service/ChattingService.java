@@ -25,9 +25,12 @@ import psychat.backend.global.exception.NotFoundException;
 import psychat.backend.member.domain.Member;
 import psychat.backend.member.service.MemberService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -95,6 +98,22 @@ public class ChattingService {
         sessionIndexMap.remove(findSession.getId());
 
         return EmotionResponse.of(emotion);
+    }
+
+    public ChattingListResponse chattingListBySessionId(Long sessionId) {
+        Session findSession = findBySessionId(sessionId);
+        List<UserMessage> userMessages = userMessageRepository.findAllBySession(findSession);
+        List<BotMessage> botMessages = botMessageRepository.findAllBySession(findSession);
+
+        List<MessageResponse> users = userMessages.stream()
+                .map(MessageResponse::of)
+                .collect(Collectors.toList());
+
+        List<MessageResponse> bots = botMessages.stream()
+                .map(MessageResponse::of)
+                .collect(Collectors.toList());
+
+        return ChattingListResponse.of(users, bots);
     }
 
     private int getEmotionResult(Long sessionId) {
