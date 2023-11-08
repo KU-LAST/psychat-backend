@@ -116,6 +116,18 @@ public class ChattingService {
         return ChattingListResponse.of(users, bots);
     }
 
+    public PreviousChatListResponse previousChats(String token) {
+        Member findMember = memberService.findByToken(token);
+
+        List<Session> sessions = sessionRepository.findAllByMember(findMember);
+
+        List<PreviousChatResponse> previousChatList = sessions.stream()
+                .map(PreviousChatResponse::of)
+                .collect(Collectors.toList());
+
+        return PreviousChatListResponse.of(previousChatList);
+    }
+
     private int getEmotionResult(Long sessionId) {
         Map<Integer, Integer> emotionAndFrequency = sessionIndexMap.get(sessionId);
 
