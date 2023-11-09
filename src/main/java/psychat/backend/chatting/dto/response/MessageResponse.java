@@ -28,7 +28,7 @@ public class MessageResponse {
     public static MessageResponse of(BotMessage botMessage) {
         return MessageResponse.builder()
                 .messageContent(botMessage.getMessageContent())
-                .timestamp(botMessage.getCreatedTime().format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")))
+                .timestamp(botMessage.getCreatedTime().format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss")))
                 .build();
     }
 }
