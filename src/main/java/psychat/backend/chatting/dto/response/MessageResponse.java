@@ -21,7 +21,7 @@ public class MessageResponse {
     public static MessageResponse of(UserMessage userMessage) {
         return MessageResponse.builder()
                 .messageContent(userMessage.getMessageContent())
-                .timestamp(userMessage.getStartTime().format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")))
+                .timestamp(userMessage.getStartTime().format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss")))
                 .build();
     }
 
