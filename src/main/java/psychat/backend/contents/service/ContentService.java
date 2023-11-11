@@ -2,6 +2,8 @@ package psychat.backend.contents.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import psychat.backend.chatting.domain.Emotion;
+import psychat.backend.chatting.service.EmotionService;
 import psychat.backend.contents.domain.Content;
 import psychat.backend.contents.dto.request.ContentsRequest;
 import psychat.backend.contents.dto.request.FillContentRequest;
@@ -18,11 +20,13 @@ import java.util.stream.Collectors;
 public class ContentService {
 
     private final ContentRepository contentRepository;
+    private final EmotionService emotionService;
 
     public ContentsListResponse recommended_contents(ContentsRequest request) {
         String emotionType = request.getEmotion();
+        Emotion emotion = emotionService.getCategory(emotionType);
 
-        List<ContentsResponse> contentsList = contentRepository.findAllByEmotionType(emotionType)
+        List<ContentsResponse> contentsList = contentRepository.findAllByEmotionType(emotion.getCategory())
                 .stream()
                 .map(ContentsResponse::of)
                 .collect(Collectors.toList());

@@ -86,7 +86,7 @@ public class EmotionService {
         }
     }
     public void fill() {
-        Resource resource = resourceLoader.getResource("classpath:wellness_dialog_category.txt");
+        Resource resource = resourceLoader.getResource("classpath:wellness_dialog_sentiment_index.txt");
 
         if (resource.exists()) {
             try {
@@ -97,10 +97,11 @@ public class EmotionService {
 
                 while ((line = reader.readLine()) != null) {
                     String[] parts = line.split("    ");
-                    String emotionType = parts[0];
-                    Long index = Long.parseLong(parts[1]);
+                    Long index = Long.parseLong(parts[0]);
+                    String emotionType = parts[1];
+                    String category = parts[2];
 
-                    Emotion emotion = Emotion.of(index, emotionType);
+                    Emotion emotion = Emotion.createEmotion(index, emotionType, category);
                     emotionList.add(emotion);
                 }
 
@@ -110,5 +111,10 @@ public class EmotionService {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public Emotion getCategory(String type) {
+        return emotionRepository.findByType(type)
+                .orElseThrow(() -> new NotFoundException("맞는 감정이 없습니다."));
     }
 }
