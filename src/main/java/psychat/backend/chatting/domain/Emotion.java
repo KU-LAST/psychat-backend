@@ -19,11 +19,20 @@ public class Emotion {
     private Long id;
 
     private String type;
+    private String category;
 
     public static Emotion of(Long id, String type) {
         return Emotion.builder()
                 .id(id)
                 .type(type)
+                .build();
+    }
+
+    public static Emotion createEmotion(Long id, String type, String category) {
+        return Emotion.builder()
+                .id(id)
+                .type(type)
+                .category(category)
                 .build();
     }
 }
