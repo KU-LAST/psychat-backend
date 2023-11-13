@@ -15,6 +15,7 @@ import psychat.backend.chatting.domain.Session;
 import psychat.backend.chatting.domain.UserMessage;
 import psychat.backend.chatting.dto.request.ChatbotRequest;
 import psychat.backend.chatting.dto.request.ChattingRequest;
+import psychat.backend.chatting.dto.request.CheckRequest;
 import psychat.backend.chatting.dto.request.EndRequest;
 import psychat.backend.chatting.dto.response.*;
 import psychat.backend.chatting.repository.BotMessageRepository;
@@ -126,6 +127,23 @@ public class ChattingService {
                 .collect(Collectors.toList());
 
         return PreviousChatListResponse.of(previousChatList);
+    }
+
+    public Map<String, Boolean> check(String token, CheckRequest request) {
+        Map<String, Boolean> map = new HashMap<>();
+
+        Session findSession = findBySessionId(request.getSessionId());
+        List<UserMessage> userMessages = userMessageRepository.findAllBySession(findSession);
+
+        for (UserMessage userMessage : userMessages) {
+            if (userMessage.getEmotion() != null) {
+                map.put("isJudged", true);
+                return map;
+            }
+        }
+
+        map.put("isJudged", false);
+        return map;
     }
 
     private int getEmotionResult(Long sessionId) {
