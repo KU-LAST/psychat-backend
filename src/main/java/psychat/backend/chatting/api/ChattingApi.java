@@ -3,10 +3,13 @@ package psychat.backend.chatting.api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import psychat.backend.chatting.dto.request.ChattingRequest;
+import psychat.backend.chatting.dto.request.CheckRequest;
 import psychat.backend.chatting.dto.request.EndRequest;
 import psychat.backend.chatting.dto.response.*;
 import psychat.backend.chatting.service.ChattingService;
 import psychat.backend.chatting.service.EmotionService;
+
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -44,5 +47,10 @@ public class ChattingApi {
     @GetMapping("/previous-chats")
     public PreviousChatListResponse previousChats(@RequestParam String token) {
         return chattingService.previousChats(token);
+    }
+
+    @PostMapping("/check")
+    public Map<String, Boolean> check(@RequestParam String token, @RequestBody CheckRequest request) {
+        return chattingService.check(token, request);
     }
 }
