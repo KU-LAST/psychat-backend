@@ -68,7 +68,8 @@ public class EmotionService {
 
             EmotionJudgeResponse response = objectMapper.readValue(responseEntity.getBody(), EmotionJudgeResponse.class);
 
-            String emotionResult = convert((long) response.getEmotion());
+            long index = response.getEmotion();
+            String emotionResult = convert(index + 1L);
             log.info("emotion : {}", emotionResult);
 
             Map<Integer, Integer> emotionAndFrequency = sessionIndexMap.get(request.getSessionId());
