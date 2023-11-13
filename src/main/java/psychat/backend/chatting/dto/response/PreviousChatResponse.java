@@ -21,7 +21,7 @@ public class PreviousChatResponse {
     public static PreviousChatResponse of(Session session) {
         return PreviousChatResponse.builder()
                 .sessionId(session.getId())
-                .startDate(session.getStartTime().format(DateTimeFormatter.ofPattern("yyyy.MM.dd")))
+                .startDate(session.getStartTime().format(DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")))
                 .emotion(session.getEmotion() == null ? "분석 결과 없음" : session.getEmotion())
                 .build();
     }
