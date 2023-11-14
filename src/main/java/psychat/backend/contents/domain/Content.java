@@ -34,4 +34,14 @@ public class Content {
                 .title(request.getTitle())
                 .build();
     }
+
+    public static Content of(String emotionType, String videoUrl, String thumbnail, String uploadDate, String title) {
+        return Content.builder()
+                .emotionType(emotionType)
+                .videoUrl(videoUrl)
+                .thumbnail(thumbnail)
+                .uploadDate(uploadDate)
+                .title(title)
+                .build();
+    }
 }
