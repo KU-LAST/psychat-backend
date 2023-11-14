@@ -1,10 +1,7 @@
 package psychat.backend.contents.api;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import psychat.backend.contents.dto.request.ContentsRequest;
 import psychat.backend.contents.dto.request.FillContentRequest;
 import psychat.backend.contents.dto.response.ContentsListResponse;
@@ -27,4 +24,8 @@ public class ContentApi {
         contentService.fill_content(request);
     }
 
+    @GetMapping("/fill-contents")
+    public void fill_contents() {
+        contentService.fill_contents();
+    }
 }
