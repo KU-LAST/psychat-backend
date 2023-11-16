@@ -73,7 +73,7 @@ public class EmotionService {
             log.info("emotion : {}", emotionResult);
 
             Map<Integer, Integer> emotionAndFrequency = sessionIndexMap.get(request.getSessionId());
-            int key = response.getEmotion();
+            int key = response.getEmotion() + 1;
             emotionAndFrequency.computeIfPresent(key, (k, v) -> v + 1);
             emotionAndFrequency.putIfAbsent(key, 1);
 
