@@ -49,4 +49,4 @@ Solution 2 ) 감정 분류 모델 개선
 
 ## Development
 - Java 11
-- Spring / Spring data JPA
+- Spring / Data JPA
